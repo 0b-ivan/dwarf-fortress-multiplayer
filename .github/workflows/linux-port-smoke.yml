@@ -11,7 +11,7 @@ jobs:
   compile-dfcapture:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install build dependencies
         run: |
@@ -19,7 +19,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             build-essential gcc g++ cmake ninja-build ccache git \
             zlib1g-dev libsdl2-dev libxml-libxml-perl libxml-libxslt-perl \
-            libjpeg62-turbo-dev libpng-dev pkg-config perl
+            libjpeg-dev libpng-dev pkg-config perl
 
       - name: Checkout DFHack 53.16-r1.1
         run: |
