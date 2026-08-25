@@ -1,0 +1,29 @@
+services:
+  dwarf-fortress:
+    image: ghcr.io/0b-ivan/dwarf-fortress-multiplayer:${IMAGE_TAG:-latest}
+    container_name: dwarf-fortress-multiplayer
+    platform: linux/amd64
+    restart: unless-stopped
+    shm_size: "1gb"
+    ports:
+      - "127.0.0.1:${DFCAPTURE_PORT:-8765}:8765"
+      - "127.0.0.1:${ADMIN_PORT:-6080}:6080"
+    volumes:
+      - ./assets/private/dwarf_fortress_53_16_linux.tar.bz2:/bootstrap/dwarf_fortress_53_16_linux.tar.bz2:ro
+      - ./data/game:/opt/df
+      - ./data/save:/root/.local/share/Bay 12 Games/Dwarf Fortress/save
+      - ./data/backups:/backups
+    environment:
+      DISPLAY: ":99"
+      TERM: xterm
+      SDL_VIDEODRIVER: x11
+      SDL_AUDIODRIVER: dummy
+      SDL_RENDER_DRIVER: software
+      DFCAPTURE_PORT: "8765"
+      DF_AUTOPAUSE: "${DF_AUTOPAUSE:-0}"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8765/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 60s

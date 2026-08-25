@@ -3,6 +3,8 @@ assets/private/*
 !assets/private/README.md
 
 # Runtime state
+data/game/*
+!data/game/.gitkeep
 data/save/*
 !data/save/.gitkeep
 data/backups/*
