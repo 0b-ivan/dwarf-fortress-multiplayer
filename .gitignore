@@ -1,0 +1,13 @@
+# Purchased Dwarf Fortress archives must never be committed.
+assets/private/*
+!assets/private/README.md
+
+# Runtime state
+data/save/*
+!data/save/.gitkeep
+data/backups/*
+!data/backups/.gitkeep
+
+# Local config
+.env
+.DS_Store

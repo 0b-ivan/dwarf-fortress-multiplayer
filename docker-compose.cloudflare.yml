@@ -1,0 +1,14 @@
+services:
+  cloudflared:
+    image: "${CLOUDFLARED_IMAGE:-cloudflare/cloudflared:latest}"
+    container_name: dwarf-fortress-cloudflared
+    restart: unless-stopped
+    depends_on:
+      dwarf-fortress:
+        condition: service_healthy
+    command:
+      - tunnel
+      - --no-autoupdate
+      - run
+      - --token
+      - "${CLOUDFLARE_TUNNEL_TOKEN:?set CLOUDFLARE_TUNNEL_TOKEN}"

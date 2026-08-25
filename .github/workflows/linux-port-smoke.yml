@@ -1,0 +1,52 @@
+name: Linux port smoke
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  compile-dfcapture:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential gcc g++ cmake ninja-build ccache git \
+            zlib1g-dev libsdl2-dev libxml-libxml-perl libxml-libxslt-perl \
+            libjpeg62-turbo-dev libpng-dev pkg-config perl
+
+      - name: Checkout DFHack 53.16-r1.1
+        run: |
+          git clone --recursive --branch 53.16-r1.1 \
+            https://github.com/DFHack/dfhack.git /tmp/dfhack
+
+      - name: Checkout pinned Multi Dwarf
+        run: |
+          git clone https://github.com/SourceAirbender/multi-dwarf.git \
+            /tmp/dfhack/plugins/external/dfcapture_public
+          git -C /tmp/dfhack/plugins/external/dfcapture_public \
+            checkout 11ea5b1df1efe599bdb4746f21773f051345a6fe
+
+      - name: Apply Linux patch
+        run: |
+          python3 scripts/patch-multidwarf-linux.py \
+            /tmp/dfhack/plugins/external/dfcapture_public
+
+      - name: Configure DFHack
+        run: |
+          cmake -S /tmp/dfhack -B /tmp/dfhack/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/tmp/df-install \
+            -DBUILD_DOCS=OFF \
+            -DBUILD_STONESENSE=OFF \
+            -DBUILD_TESTS=OFF
+
+      - name: Compile DFCapture Linux plugin
+        run: |
+          cmake --build /tmp/dfhack/build --target dfcapture_public -j2

@@ -1,0 +1,11 @@
+SPDX-License-Identifier: AGPL-3.0-only
+
+This project's integration and Linux-port code is licensed under the GNU Affero
+General Public License version 3 only (AGPL-3.0-only).
+
+Full license text:
+https://www.gnu.org/licenses/agpl-3.0.txt
+
+Dwarf Fortress itself is proprietary software and is not included in this
+repository. DFHack and upstream Multi Dwarf / DFCapture retain their respective
+licenses and copyright notices.

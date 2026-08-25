@@ -1,0 +1,8 @@
+.git
+.gitignore
+README.md
+docs/
+data/
+.DS_Store
+# Do NOT ignore assets/private/dwarf_fortress_53_16_linux.tar.bz2:
+# the Docker build intentionally consumes the user's local purchased archive.
