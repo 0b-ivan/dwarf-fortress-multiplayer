@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dwarf Fortress Admin</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; background: #111; font-family: system-ui, sans-serif; }
+    body { display: grid; grid-template-rows: minmax(0, 1fr) 58px; overflow: hidden; }
+    #vnc { width: 100%; height: 100%; border: 0; background: #000; }
+    #audio-bar { display: flex; align-items: center; gap: 12px; padding: 8px 14px; background: #181818; border-top: 1px solid #333; }
+    #audio-bar strong { white-space: nowrap; font-size: 14px; }
+    #audio { width: min(760px, 100%); height: 36px; }
+    #enable-audio { border: 1px solid #666; border-radius: 6px; background: #2c2c2c; color: #fff; padding: 7px 12px; cursor: pointer; }
+    #status { color: #aaa; font-size: 12px; white-space: nowrap; }
+    @media (max-width: 700px) {
+      body { grid-template-rows: minmax(0, 1fr) 92px; }
+      #audio-bar { flex-wrap: wrap; gap: 6px; }
+      #audio { order: 3; width: 100%; }
+      #status { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <iframe id="vnc" src="/vnc.html?autoconnect=true&resize=remote" allow="clipboard-read; clipboard-write"></iframe>
+  <div id="audio-bar">
+    <strong>DF Audio</strong>
+    <audio id="audio" controls preload="none">
+      <source src="/audio" type="audio/ogg; codecs=opus">
+    </audio>
+    <button id="enable-audio" type="button">Enable audio</button>
+    <span id="status">Live game audio</span>
+  </div>
+  <script>
+    const audio = document.getElementById('audio');
+    const button = document.getElementById('enable-audio');
+    const status = document.getElementById('status');
+
+    async function enableAudio() {
+      try {
+        await audio.play();
+        button.hidden = true;
+        status.textContent = 'Live';
+      } catch (_) {
+        status.textContent = 'Browser blocked autoplay — click Enable audio';
+      }
+    }
+
+    button.addEventListener('click', enableAudio);
+    audio.addEventListener('playing', () => {
+      button.hidden = true;
+      status.textContent = 'Live';
+    });
+    audio.addEventListener('error', () => {
+      button.hidden = false;
+      status.textContent = 'Audio stream unavailable';
+    });
+
+    enableAudio();
+  </script>
+</body>
+</html>
