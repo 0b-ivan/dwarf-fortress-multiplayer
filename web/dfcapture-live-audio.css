@@ -1,0 +1,73 @@
+:root {
+  --df-live-audio-height: 42px;
+}
+
+#liveAudioBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
+  height: var(--df-live-audio-height);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background: #0b0b0b;
+  border-top: 1px solid #8c6f2c;
+  color: #e8d7a2;
+  font: 13px/1.2 sans-serif;
+}
+
+#liveAudioBar audio {
+  flex: 1 1 420px;
+  min-width: 180px;
+  max-width: 520px;
+  height: 32px;
+}
+
+#liveAudioEnable {
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 4px 10px;
+  border: 1px solid #8c6f2c;
+  border-radius: 3px;
+  background: #17140d;
+  color: #f0dfa8;
+  cursor: pointer;
+}
+
+#liveAudioEnable:hover {
+  background: #2a2314;
+}
+
+.live-audio-label,
+.live-audio-status {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.live-audio-status {
+  opacity: 0.8;
+}
+
+/* Keep Dwarf Fortress' own bottom toolbar visible above the live soundbar. */
+#bottomBar {
+  bottom: var(--df-live-audio-height) !important;
+}
+
+@media (max-width: 640px) {
+  #liveAudioBar {
+    gap: 5px;
+    padding-inline: 6px;
+  }
+
+  .live-audio-status {
+    display: none;
+  }
+
+  #liveAudioBar audio {
+    min-width: 120px;
+  }
+}

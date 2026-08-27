@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
       build-essential cmake ca-certificates curl pkg-config \
       libx11-dev libxext-dev libxcursor-dev libxrandr-dev libxfixes-dev \
-      libxi-dev libxss-dev libxkbcommon-dev libgl1-mesa-dev \
+      libxi-dev libxss-dev libxkbcommon-dev libgl1-mesa-dev libpulse-dev \
     && rm -rf /var/lib/apt/lists/*
 ARG SDL2_VERSION=2.30.9
 RUN curl -fsSL \
@@ -86,6 +86,12 @@ RUN set -eux; \
     find /opt/df/hack/plugins -maxdepth 1 -type f -name 'dfcapture*' -print; \
     test -n "$(find /opt/df/hack/plugins -maxdepth 1 -type f -name 'dfcapture*.so' -print -quit)"
 
+COPY web/dfcapture-live-audio.css /opt/df/hack/dfcapture-web/css/dfcapture-live-audio.css
+COPY web/dfcapture-live-audio.js /opt/df/hack/dfcapture-web/js/dfcapture-live-audio.js
+COPY scripts/patch-dfcapture-live-audio.py /usr/local/bin/patch-dfcapture-live-audio.py
+RUN python3 /usr/local/bin/patch-dfcapture-live-audio.py \
+      /opt/df/hack/dfcapture-web/index.html
+
 COPY --from=sdlbuild /sdl/libSDL2-2.0.so.0 /opt/df/libSDL2-2.0.so.0
 
 FROM debian:${DEBIAN_VERSION}-slim AS runtime
@@ -96,19 +102,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       libgl1 libglu1-mesa libgl1-mesa-dri \
       tigervnc-standalone-server tigervnc-common \
       novnc websockify matchbox-window-manager x11-utils xdotool \
+      pulseaudio pulseaudio-utils ffmpeg icecast2 nginx \
       curl ca-certificates procps bzip2 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /opt/df /opt/df
+COPY config/icecast.xml /etc/icecast2/icecast.xml
+COPY config/nginx.conf /etc/nginx/nginx.conf
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh \
-    && mkdir -p "/root/.local/share/Bay 12 Games/Dwarf Fortress/save" /backups
+    && mkdir -p "/root/.local/share/Bay 12 Games/Dwarf Fortress/save" /backups /var/log/df
 
 ENV DISPLAY=:99 \
     TERM=xterm \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
     SDL_VIDEODRIVER=x11 \
-    SDL_AUDIODRIVER=dummy \
+    SDL_AUDIODRIVER=pulseaudio \
     SDL_RENDER_DRIVER=software \
+    DFCAPTURE_PUBLIC_PORT=8765 \
+    DFCAPTURE_BACKEND_PORT=8766 \
     LD_LIBRARY_PATH=/opt/df:/opt/df/hack/libs:/opt/df/hack
 
 EXPOSE 8765 6080
