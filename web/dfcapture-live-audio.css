@@ -57,6 +57,20 @@
   bottom: var(--df-live-audio-height) !important;
 }
 
+/*
+ * DFCapture anchors designation submenus to the viewport at bottom: 44px.
+ * Once the main toolbar is lifted by the audio bar, leaving these unchanged
+ * makes them render behind the toolbar. Move the complete submenu family by
+ * the same offset so Dig/Trees/Smooth/Traffic/Item options stay visible.
+ */
+#digSubmenu,
+#plantSubmenu,
+#smoothSubmenu,
+#trafficSubmenu,
+#itemDesigSubmenu {
+  bottom: calc(44px + var(--df-live-audio-height)) !important;
+}
+
 @media (max-width: 640px) {
   #liveAudioBar {
     gap: 5px;
