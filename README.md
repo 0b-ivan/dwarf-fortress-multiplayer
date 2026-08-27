@@ -131,20 +131,38 @@ per-fort metadata follows the persistent save.
 
 | Port | Purpose | Exposure |
 |---|---|---|
-| `8765` | Lobby + DFCapture player UI/API | localhost by default |
+| `8765` | Lobby + DFCapture player UI/API | localhost by default; Cloudflare tunnel target |
 | `6080` | noVNC admin/bootstrap | localhost only |
 
-## Production / Cloudflare
+## Cloudflare multiplayer access
 
-The intended hosted URL is:
+`cloudflared` is integrated into both Compose files under the optional
+`cloudflare` profile. Configure the Cloudflare Tunnel hostname to point to:
+
+```text
+http://dwarf-fortress:8765
+```
+
+Export the remotely managed tunnel token:
+
+```bash
+export CLOUDFLARE_TUNNEL_TOKEN='...'
+```
+
+For the published GHCR image start the complete local game + tunnel stack with:
+
+```bash
+docker compose -f docker-compose.ghcr.yml --profile cloudflare up -d
+```
+
+The intended public URL is:
 
 ```text
 https://dwarfs.obivan.org
 ```
 
-Only the multiplayer gateway (`8765`) belongs behind Cloudflare Tunnel +
-Cloudflare Access. The optional `docker-compose.cloudflare.yml` starts
-`cloudflared`; local `make up` does not. See [`docs/cloudflare.md`](docs/cloudflare.md).
+The noVNC admin endpoint on `6080` remains localhost-only and must not be added
+to the Cloudflare Tunnel. See [`docs/cloudflare.md`](docs/cloudflare.md).
 
 ## CI
 
