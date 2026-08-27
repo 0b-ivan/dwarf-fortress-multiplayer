@@ -10,8 +10,8 @@ build: check
 
 up:
 	docker compose up -d
-	@echo "Admin/noVNC: http://localhost:$${ADMIN_PORT:-6080}/vnc.html?autoconnect=true&resize=remote"
-	@echo "Players:      http://localhost:$${DFCAPTURE_PORT:-8765}/view?player=YOURNAME"
+	@echo "Admin/noVNC: http://localhost:$${ADMIN_PORT:-6080}/"
+	@echo "Players:      http://localhost:$${DFCAPTURE_PORT:-8765}/"
 
 down:
 	docker compose down
@@ -25,13 +25,13 @@ shell:
 cloudflare-up: check
 	@test -n "$${CLOUDFLARE_TUNNEL_TOKEN:-}" || \
 	  (echo "missing: CLOUDFLARE_TUNNEL_TOKEN" >&2; exit 1)
-	docker compose -f docker-compose.yml -f docker-compose.cloudflare.yml up -d
+	docker compose --profile cloudflare up -d
 
 cloudflare-down:
-	docker compose -f docker-compose.yml -f docker-compose.cloudflare.yml down
+	docker compose --profile cloudflare down
 
 cloudflare-logs:
-	docker compose -f docker-compose.yml -f docker-compose.cloudflare.yml logs -f cloudflared
+	docker compose --profile cloudflare logs -f cloudflared
 
 clean:
-	docker compose down --remove-orphans
+	docker compose --profile cloudflare down --remove-orphans
