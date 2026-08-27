@@ -7,58 +7,225 @@
   <style>
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; margin: 0; background: #111; font-family: system-ui, sans-serif; }
-    body { display: grid; grid-template-rows: minmax(0, 1fr) 58px; overflow: hidden; }
-    #vnc { width: 100%; height: 100%; border: 0; background: #000; }
-    #audio-bar { display: flex; align-items: center; gap: 12px; padding: 8px 14px; background: #181818; border-top: 1px solid #333; }
-    #audio-bar strong { white-space: nowrap; font-size: 14px; }
-    #audio { width: min(760px, 100%); height: 36px; }
-    #enable-audio { border: 1px solid #666; border-radius: 6px; background: #2c2c2c; color: #fff; padding: 7px 12px; cursor: pointer; }
-    #status { color: #aaa; font-size: 12px; white-space: nowrap; }
-    @media (max-width: 700px) {
-      body { grid-template-rows: minmax(0, 1fr) 92px; }
-      #audio-bar { flex-wrap: wrap; gap: 6px; }
-      #audio { order: 3; width: 100%; }
-      #status { display: none; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      background: #111;
+      font-family: system-ui, sans-serif;
+    }
+
+    body {
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      overflow: hidden;
+    }
+
+    #vnc {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #000;
+    }
+
+    #audio-bar {
+      width: 100%;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 12px;
+      max-height: 64px;
+      padding: 8px 14px;
+      overflow: hidden;
+      background: rgba(20, 20, 20, 0.78);
+      border-top: 1px solid #2f2f2f;
+      backdrop-filter: blur(8px);
+      opacity: 0.96;
+      transition:
+        max-height 180ms ease,
+        opacity 180ms ease,
+        padding 180ms ease,
+        background 180ms ease;
+    }
+
+    #audio-bar strong {
+      white-space: nowrap;
+      font-size: 14px;
+      color: #e6e6e6;
+    }
+
+    #audio {
+      width: 100%;
+      min-width: 0;
+      height: 36px;
+    }
+
+    #enable-audio {
+      border: 1px solid #555;
+      border-radius: 6px;
+      background: #262626;
+      color: #fff;
+      padding: 7px 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    #status {
+      color: #9a9a9a;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    #status::before {
+      content: "●";
+      margin-right: 5px;
+      font-size: 9px;
+    }
+
+    #audio-bar.is-collapsed {
+      grid-template-columns: 1fr;
+      max-height: 14px;
+      padding: 2px 14px;
+      opacity: 0.62;
+      cursor: pointer;
+    }
+
+    #audio-bar.is-collapsed strong,
+    #audio-bar.is-collapsed #audio,
+    #audio-bar.is-collapsed #enable-audio,
+    #audio-bar.is-collapsed #status {
+      display: none;
+    }
+
+    #audio-bar.is-collapsed::before {
+      content: "";
+      display: block;
+      width: 100%;
+      height: 4px;
+      border-radius: 999px;
+      background: #666;
+      opacity: 0.7;
+    }
+
+    #audio-bar:hover,
+    #audio-bar:focus-within {
+      opacity: 1;
+    }
+
+    @media (max-width: 800px) {
+      #audio-bar {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      #status {
+        display: none;
+      }
+
+      #audio {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
   <iframe id="vnc" src="/vnc.html?autoconnect=true&resize=remote" allow="clipboard-read; clipboard-write"></iframe>
-  <div id="audio-bar">
+
+  <div id="audio-bar" tabindex="0" aria-label="Dwarf Fortress live audio controls">
     <strong>DF Audio</strong>
     <audio id="audio" controls preload="none">
       <source src="/audio" type="audio/ogg; codecs=opus">
     </audio>
     <button id="enable-audio" type="button">Enable audio</button>
-    <span id="status">Live game audio</span>
+    <span id="status" aria-live="polite">Live</span>
   </div>
+
   <script>
     const audio = document.getElementById('audio');
     const button = document.getElementById('enable-audio');
     const status = document.getElementById('status');
+    const bar = document.getElementById('audio-bar');
+
+    let collapseTimer = null;
+    let manuallyExpanded = false;
+
+    function expandBar() {
+      bar.classList.remove('is-collapsed');
+      resetCollapseTimer();
+    }
+
+    function collapseBar() {
+      if (bar.matches(':hover') || bar.matches(':focus-within')) {
+        return;
+      }
+      bar.classList.add('is-collapsed');
+    }
+
+    function resetCollapseTimer() {
+      clearTimeout(collapseTimer);
+      collapseTimer = setTimeout(() => {
+        if (!manuallyExpanded) collapseBar();
+      }, 3500);
+    }
 
     async function enableAudio() {
       try {
         await audio.play();
         button.hidden = true;
         status.textContent = 'Live';
+        expandBar();
       } catch (_) {
-        status.textContent = 'Browser blocked autoplay — click Enable audio';
+        button.hidden = false;
+        status.textContent = 'Enable audio';
+        expandBar();
       }
     }
 
-    button.addEventListener('click', enableAudio);
+    button.addEventListener('click', async (event) => {
+      event.stopPropagation();
+      manuallyExpanded = true;
+      await enableAudio();
+      manuallyExpanded = false;
+      resetCollapseTimer();
+    });
+
     audio.addEventListener('playing', () => {
       button.hidden = true;
       status.textContent = 'Live';
+      expandBar();
     });
+
+    audio.addEventListener('pause', () => {
+      status.textContent = 'Paused';
+      resetCollapseTimer();
+    });
+
     audio.addEventListener('error', () => {
       button.hidden = false;
-      status.textContent = 'Audio stream unavailable';
+      status.textContent = 'Unavailable';
+      expandBar();
+    });
+
+    bar.addEventListener('mouseenter', expandBar);
+    bar.addEventListener('mousemove', resetCollapseTimer);
+    bar.addEventListener('focusin', expandBar);
+    bar.addEventListener('mouseleave', resetCollapseTimer);
+
+    bar.addEventListener('click', () => {
+      if (bar.classList.contains('is-collapsed')) {
+        expandBar();
+      }
+    });
+
+    bar.addEventListener('keydown', (event) => {
+      if ((event.key === 'Enter' || event.key === ' ') && bar.classList.contains('is-collapsed')) {
+        event.preventDefault();
+        expandBar();
+      }
     });
 
     enableAudio();
+    resetCollapseTimer();
   </script>
 </body>
 </html>
