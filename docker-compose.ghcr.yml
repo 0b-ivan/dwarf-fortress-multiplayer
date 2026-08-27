@@ -30,3 +30,18 @@ services:
       timeout: 5s
       retries: 20
       start_period: 60s
+
+  cloudflared:
+    image: "${CLOUDFLARED_IMAGE:-cloudflare/cloudflared:latest}"
+    container_name: dwarf-fortress-cloudflared
+    profiles: ["cloudflare"]
+    restart: unless-stopped
+    depends_on:
+      dwarf-fortress:
+        condition: service_healthy
+    command:
+      - tunnel
+      - --no-autoupdate
+      - run
+      - --token
+      - "${CLOUDFLARE_TUNNEL_TOKEN:-}"

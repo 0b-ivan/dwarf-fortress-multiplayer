@@ -1,8 +1,6 @@
 # Cloudflare deployment
 
-Local Docker does not require Cloudflare. `make up` starts only Dwarf Fortress.
-
-For the hosted deployment:
+`cloudflared` is part of the normal Compose files and is disabled by default through the `cloudflare` profile.
 
 ```text
 Browser
@@ -17,57 +15,83 @@ cloudflared container
   ↓
 http://dwarf-fortress:8765
   ↓
-DFCapture
+Lobby + DFCapture
   ↓
 one shared Dwarf Fortress
 ```
 
-No Authentik is used.
+Port `6080` remains bound to localhost and is never routed through the tunnel.
 
-## Tunnel
+## 1. Configure the tunnel
 
-Create a remotely managed Cloudflare Tunnel and configure its public hostname:
+Create a remotely managed Cloudflare Tunnel and add a public hostname:
 
 ```text
 Hostname: dwarfs.obivan.org
 Service:  http://dwarf-fortress:8765
 ```
 
-Then export the tunnel token:
+Get the tunnel token from Cloudflare and export it locally:
 
 ```bash
 export CLOUDFLARE_TUNNEL_TOKEN='...'
 ```
 
-Start the application plus tunnel:
+## 2. Start with the GHCR image
+
+```bash
+docker compose -f docker-compose.ghcr.yml --profile cloudflare up -d
+```
+
+This starts both:
+
+```text
+dwarf-fortress-multiplayer
+dwarf-fortress-cloudflared
+```
+
+Check:
+
+```bash
+docker compose -f docker-compose.ghcr.yml --profile cloudflare ps
+docker compose -f docker-compose.ghcr.yml --profile cloudflare logs -f cloudflared
+```
+
+Stop:
+
+```bash
+docker compose -f docker-compose.ghcr.yml --profile cloudflare down
+```
+
+## Local source-build variant
+
+The same profile exists in `docker-compose.yml`:
 
 ```bash
 make cloudflare-up
-```
-
-Logs:
-
-```bash
 make cloudflare-logs
 ```
 
-The optional Compose overlay is `docker-compose.cloudflare.yml`.
+or directly:
+
+```bash
+docker compose --profile cloudflare up -d
+```
 
 ## Access
 
-Put a Cloudflare Access policy in front of `dwarfs.obivan.org`. Cloudflare is
-therefore both the public ingress and the authentication boundary. There is no
-additional Authentik login in this design.
+Put a Cloudflare Access policy in front of `dwarfs.obivan.org` if the game should not be publicly reachable. No additional Authentik service is required.
 
 ## Admin endpoint
 
-Do **not** add a public hostname for port `6080`. noVNC is bound to
-`127.0.0.1` on the Docker host and is intended only for local/bootstrap admin
-use.
+Do **not** add a public hostname for port `6080`.
+
+```text
+http://127.0.0.1:6080/
+```
+
+is the local noVNC/bootstrap admin interface only.
 
 ## AGPL note
 
-DFCapture is AGPL-3.0-only. If a modified build is used over the network, make
-the corresponding modified source available to those users. This repository
-contains the pinned upstream revision and the Linux patch/build logic; the
-purchased Dwarf Fortress archive is deliberately excluded.
+DFCapture is AGPL-3.0-only. If a modified build is used over the network, make the corresponding modified source available to those users. The purchased Dwarf Fortress archive remains excluded from Git and the published image.

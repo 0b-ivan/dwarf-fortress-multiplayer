@@ -26,6 +26,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Validate Compose files
+        run: |
+          docker compose -f docker-compose.yml config >/dev/null
+          docker compose -f docker-compose.ghcr.yml config >/dev/null
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
