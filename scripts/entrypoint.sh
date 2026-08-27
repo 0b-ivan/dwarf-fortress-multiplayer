@@ -25,6 +25,21 @@ for init_file in /opt/df/prefs/init.txt /opt/df/data/init/init.txt; do
   fi
 done
 
+# A container restart reuses its writable layer. If Xvnc did not remove its
+# lock/socket cleanly, the next start would otherwise fail forever with
+# "Server is already active for display 99".
+display_num="${DISPLAY#:}"
+x_lock="/tmp/.X${display_num}-lock"
+x_socket="/tmp/.X11-unix/X${display_num}"
+if [ -f "$x_lock" ]; then
+  x_pid="$(tr -dc '0-9' <"$x_lock" || true)"
+  x_comm="$(ps -p "${x_pid:-0}" -o comm= 2>/dev/null || true)"
+  if [ -z "$x_pid" ] || ! kill -0 "$x_pid" 2>/dev/null || [[ "$x_comm" != *Xvnc* && "$x_comm" != *Xtigervnc* ]]; then
+    echo "[start] removing stale X11 lock for display $DISPLAY"
+    rm -f "$x_lock" "$x_socket"
+  fi
+fi
+
 Xvnc "$DISPLAY" \
   -geometry "${GEOM:-1280x800}" \
   -depth 24 \
@@ -114,9 +129,38 @@ echo "[start] DFCapture: http://127.0.0.1:${PUBLIC_PORT}/"
 echo "[start] Live audio: http://127.0.0.1:${PUBLIC_PORT}/audio"
 echo "[start] noVNC admin: http://127.0.0.1:6080/vnc.html?autoconnect=true&resize=remote"
 
-exec env \
-  LD_PRELOAD="/opt/df/hack/libdfhack.so" \
-  LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
-  SDL_AUDIODRIVER="$SDL_AUDIODRIVER" \
-  PULSE_SINK="${PULSE_SINK:-virtual_out}" \
-  /opt/df/dwarfort
+# Quitting DF from VNC is an application-level exit, not a reason to tear down
+# the service. Keep Xvnc, DFCapture gateway and audio alive and relaunch only DF.
+shutting_down=0
+df_pid=""
+shutdown() {
+  shutting_down=1
+  if [ -n "$df_pid" ]; then
+    kill -TERM "$df_pid" 2>/dev/null || true
+  fi
+}
+trap shutdown TERM INT
+
+while [ "$shutting_down" -eq 0 ]; do
+  set +e
+  env \
+    LD_PRELOAD="/opt/df/hack/libdfhack.so" \
+    LD_LIBRARY_PATH="$LD_LIBRARY_PATH" \
+    SDL_AUDIODRIVER="$SDL_AUDIODRIVER" \
+    PULSE_SINK="${PULSE_SINK:-virtual_out}" \
+    /opt/df/dwarfort &
+  df_pid=$!
+  wait "$df_pid"
+  rc=$?
+  df_pid=""
+  set -e
+
+  if [ "$shutting_down" -ne 0 ]; then
+    break
+  fi
+
+  echo "[start] dwarfort exited rc=$rc; restarting in 2s"
+  sleep 2
+done
+
+exit 0
