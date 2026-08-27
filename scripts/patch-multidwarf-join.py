@@ -132,7 +132,7 @@ identity_routes = '''    server.Get("/identity", identity);
 
     server.Get("/session", [](const httplib::Request& req, httplib::Response& res) {
 '''
-join_routes = '''    server.Get("/identity", identity);
+join_routes = r'''    server.Get("/identity", identity);
     server.Post("/identity", identity);
 
     server.Get("/lobby-state", [](const httplib::Request&, httplib::Response& res) {
@@ -183,6 +183,21 @@ join_routes = '''    server.Get("/identity", identity);
     server.Get("/session", [](const httplib::Request& req, httplib::Response& res) {
 '''
 replace_once(identity_routes, join_routes, "join routes")
+
+# Fail early if Python escaping ever turns the generated JSON into invalid C++
+# string literals again. These patterns are exactly what the compiler reported
+# when \" was consumed by Python before session_policy.cpp was written.
+for invalid in ('"{"ok"', '","displayName":"'):
+    if invalid in text:
+        raise RuntimeError(f"generated C++ contains unescaped JSON string: {invalid}")
+
+for required in (
+    r'"{\"ok\":false,\"error\":\"join required\"}\n"',
+    r'"{\"ok\":false,\"error\":" + json_string(error) + "}\n"',
+    r'"{\"ok\":true,\"playerId\":" + json_string(player)',
+):
+    if required not in text:
+        raise RuntimeError(f"generated C++ join response missing expected escaped literal: {required}")
 
 path.write_text(text, encoding="utf-8")
 print("Join lobby patch applied successfully")
