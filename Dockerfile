@@ -109,6 +109,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /opt/df /opt/df
 COPY config/icecast.xml /etc/icecast2/icecast.xml
 COPY config/nginx.conf /etc/nginx/nginx.conf
+COPY web/novnc-index.html /opt/novnc-custom/index.html
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh \
     && mkdir -p "/root/.local/share/Bay 12 Games/Dwarf Fortress/save" /backups /var/log/df

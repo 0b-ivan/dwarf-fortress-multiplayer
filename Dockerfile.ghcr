@@ -93,6 +93,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /opt/df-overlay /opt/df-overlay
 COPY config/icecast.xml /etc/icecast2/icecast.xml
 COPY config/nginx.conf /etc/nginx/nginx.conf
+COPY web/novnc-index.html /opt/novnc-custom/index.html
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY scripts/bootstrap-ghcr.sh /usr/local/bin/bootstrap-ghcr.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/bootstrap-ghcr.sh \
