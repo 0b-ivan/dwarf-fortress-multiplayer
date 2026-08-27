@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dwarf Fortress Multiplayer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      background: #10110d;
+      color: #e8e5d7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 50% 15%, rgba(91, 111, 57, .22), transparent 38rem),
+        #10110d;
+    }
+    main {
+      width: min(520px, 100%);
+      border: 1px solid #45483b;
+      border-radius: 12px;
+      background: rgba(24, 25, 20, .96);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, .45);
+      overflow: hidden;
+    }
+    header {
+      padding: 28px 28px 22px;
+      border-bottom: 1px solid #34362e;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(24px, 6vw, 36px);
+      letter-spacing: .04em;
+      color: #d9d4ad;
+    }
+    .subtitle {
+      margin: 8px 0 0;
+      color: #999b8c;
+      font-size: 13px;
+    }
+    section { padding: 24px 28px 28px; }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #b9baa9;
+      font-size: 13px;
+    }
+    .join-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+    }
+    input, button {
+      min-height: 44px;
+      border: 1px solid #555949;
+      border-radius: 7px;
+      font: inherit;
+    }
+    input {
+      width: 100%;
+      padding: 0 13px;
+      background: #11120f;
+      color: #fff;
+      outline: none;
+    }
+    input:focus { border-color: #89956a; box-shadow: 0 0 0 2px rgba(137, 149, 106, .18); }
+    button {
+      padding: 0 18px;
+      background: #4d5c35;
+      color: #fff;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    button:hover { background: #5b6d3e; }
+    button:disabled { opacity: .55; cursor: wait; }
+    .hint, #message {
+      margin: 9px 0 0;
+      min-height: 18px;
+      font-size: 12px;
+      color: #838679;
+    }
+    #message.error { color: #e39b86; }
+    #message.ok { color: #9bb67a; }
+    .online {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid #34362e;
+    }
+    .online-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+      margin-bottom: 10px;
+    }
+    .online-head strong { font-size: 13px; }
+    #count { color: #8f927f; font-size: 12px; }
+    #players {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      min-height: 28px;
+    }
+    .player {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 9px;
+      border: 1px solid #414438;
+      border-radius: 999px;
+      color: #d5d3c3;
+      font-size: 12px;
+      background: #151611;
+    }
+    .player::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #80a65c;
+    }
+    .empty { color: #74776b; font-size: 12px; padding-top: 5px; }
+    @media (max-width: 520px) {
+      body { padding: 12px; }
+      header, section { padding-left: 20px; padding-right: 20px; }
+      .join-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>DWARF FORTRESS</h1>
+      <p class="subtitle">Gemeinsame Festung · Multi Dwarf / DFCapture</p>
+    </header>
+    <section>
+      <form id="join-form" autocomplete="off">
+        <label for="name">Spielername</label>
+        <div class="join-row">
+          <input id="name" name="name" minlength="3" maxlength="24"
+                 pattern="[A-Za-z0-9_-]{3,24}" placeholder="z. B. Ivan"
+                 autocapitalize="off" spellcheck="false" required autofocus>
+          <button id="join" type="submit">Festung betreten</button>
+        </div>
+        <p class="hint">3–24 Zeichen: A–Z, a–z, 0–9, _ und -. Groß-/Kleinschreibung zählt nicht.</p>
+        <p id="message" role="status" aria-live="polite"></p>
+      </form>
+
+      <div class="online">
+        <div class="online-head">
+          <strong>Spieler online</strong>
+          <span id="count">–</span>
+        </div>
+        <div id="players"><span class="empty">Lade …</span></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById('join-form');
+    const input = document.getElementById('name');
+    const button = document.getElementById('join');
+    const message = document.getElementById('message');
+    const players = document.getElementById('players');
+    const count = document.getElementById('count');
+    const validName = /^[A-Za-z0-9_-]{3,24}$/;
+
+    function playerId() {
+      const stored = localStorage.getItem('dfcapture.playerId') || '';
+      if (/^[0-9a-f]{32}$/i.test(stored)) return stored.toLowerCase();
+      const bytes = crypto.getRandomValues(new Uint8Array(16));
+      const fresh = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+      localStorage.setItem('dfcapture.playerId', fresh);
+      return fresh;
+    }
+
+    const previousName = localStorage.getItem('dfcapture.displayName');
+    if (previousName && validName.test(previousName)) input.value = previousName;
+
+    async function refreshPlayers() {
+      try {
+        const response = await fetch('/lobby-state', { cache: 'no-store' });
+        if (!response.ok) throw new Error('status');
+        const data = await response.json();
+        const list = Array.isArray(data.players) ? data.players : [];
+        count.textContent = `${list.length} online`;
+        players.replaceChildren();
+        if (!list.length) {
+          const empty = document.createElement('span');
+          empty.className = 'empty';
+          empty.textContent = 'Noch niemand in der Festung.';
+          players.append(empty);
+          return;
+        }
+        for (const item of list) {
+          const chip = document.createElement('span');
+          chip.className = 'player';
+          chip.textContent = item.name || 'Spieler';
+          players.append(chip);
+        }
+      } catch (_) {
+        count.textContent = 'nicht verfügbar';
+      }
+    }
+
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      const name = input.value.trim();
+      message.className = '';
+      if (!validName.test(name)) {
+        message.textContent = 'Ungültiger Spielername.';
+        message.className = 'error';
+        input.focus();
+        return;
+      }
+
+      button.disabled = true;
+      message.textContent = 'Name wird reserviert …';
+      try {
+        const query = new URLSearchParams({ name, candidate: playerId() });
+        const response = await fetch(`/join?${query}`, {
+          method: 'POST',
+          credentials: 'same-origin',
+          cache: 'no-store'
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          if (response.status === 409) throw new Error('Dieser Spielername ist bereits vergeben.');
+          throw new Error(data.error || 'Beitritt fehlgeschlagen.');
+        }
+
+        localStorage.setItem('dfcapture.playerId', data.playerId);
+        localStorage.setItem('dfcapture.displayName', data.displayName);
+        message.textContent = 'Name reserviert. Verbinde …';
+        message.className = 'ok';
+        location.assign('/view');
+      } catch (error) {
+        message.textContent = error.message || 'Beitritt fehlgeschlagen.';
+        message.className = 'error';
+        button.disabled = false;
+        refreshPlayers();
+      }
+    });
+
+    refreshPlayers();
+    setInterval(refreshPlayers, 2500);
+  </script>
+</body>
+</html>

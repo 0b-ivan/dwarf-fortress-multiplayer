@@ -46,7 +46,10 @@ RUN git clone https://github.com/SourceAirbender/multi-dwarf.git \
     && git checkout "${MULTI_DWARF_COMMIT}"
 
 COPY scripts/patch-multidwarf-linux.py /usr/local/bin/patch-multidwarf-linux.py
+COPY scripts/patch-multidwarf-join.py /usr/local/bin/patch-multidwarf-join.py
 RUN python3 /usr/local/bin/patch-multidwarf-linux.py \
+      /build/dfhack/plugins/external/dfcapture_public \
+    && python3 /usr/local/bin/patch-multidwarf-join.py \
       /build/dfhack/plugins/external/dfcapture_public
 
 RUN --mount=type=cache,target=/ccache \
@@ -93,6 +96,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /opt/df-overlay /opt/df-overlay
 COPY config/icecast.xml /etc/icecast2/icecast.xml
 COPY config/nginx.conf /etc/nginx/nginx.conf
+COPY web/join-index.html /opt/join/index.html
 COPY web/novnc-index.html /opt/novnc-custom/index.html
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY scripts/bootstrap-ghcr.sh /usr/local/bin/bootstrap-ghcr.sh

@@ -10,7 +10,7 @@ one container
     ├── Dwarf Fortress 53.16 Premium Linux
     ├── DFHack 53.16-r1.1 Linux
     ├── DFCapture / Multi Dwarf
-    ├── :8765  browser players
+    ├── :8765  multiplayer lobby + browser players
     └── :6080  local noVNC admin/bootstrap only
 ```
 
@@ -63,7 +63,7 @@ The image build:
 1. extracts your Linux Premium 53.16 archive
 2. builds DFHack `53.16-r1.1`
 3. checks out Multi Dwarf at a pinned commit
-4. applies `scripts/patch-multidwarf-linux.py`
+4. applies the native-Linux and multiplayer-lobby patches
 5. compiles the Linux `.plug.so`
 6. assembles the runtime image
 
@@ -88,18 +88,30 @@ docker compose logs -f dwarf-fortress
 Use the local admin display:
 
 ```text
-http://localhost:6080/vnc.html?autoconnect=true&resize=remote
+http://localhost:6080/
 ```
 
-This noVNC endpoint is only for bootstrap/local administration.
+This noVNC endpoint is only for bootstrap/local administration and includes the
+live game-audio bar.
 
-DFCapture starts automatically. Once a fortress is loaded:
+## 5. Join as a player
+
+Open:
 
 ```text
-http://localhost:8765/view?player=ivan
-http://localhost:8765/view?player=luca
-http://localhost:8765/view?player=player3
+http://localhost:8765/
 ```
+
+The lobby asks for a player name before DFCapture is opened. Names are reserved
+server-side, case-insensitively, and must use 3–24 characters from `A-Z`, `a-z`,
+`0-9`, `_` or `-`.
+
+If the name is free, the browser receives a stable player id and is forwarded to
+`/view`. If the name is already active, the server responds with `409 Conflict`
+and the lobby asks for another name.
+
+Direct access to `/view` without an active join reservation is redirected back
+to the lobby.
 
 All players share **one actual fortress**. DFCapture supplies separate browser
 camera/control state.
@@ -119,7 +131,7 @@ per-fort metadata follows the persistent save.
 
 | Port | Purpose | Exposure |
 |---|---|---|
-| `8765` | DFCapture player UI/API | localhost by default |
+| `8765` | Lobby + DFCapture player UI/API | localhost by default |
 | `6080` | noVNC admin/bootstrap | localhost only |
 
 ## Production / Cloudflare
@@ -130,14 +142,14 @@ The intended hosted URL is:
 https://dwarfs.obivan.org
 ```
 
-Only DFCapture (`8765`) belongs behind Cloudflare Tunnel + Cloudflare Access.
-The optional `docker-compose.cloudflare.yml` starts `cloudflared`; local `make up`
-does not. See [`docs/cloudflare.md`](docs/cloudflare.md).
+Only the multiplayer gateway (`8765`) belongs behind Cloudflare Tunnel +
+Cloudflare Access. The optional `docker-compose.cloudflare.yml` starts
+`cloudflared`; local `make up` does not. See [`docs/cloudflare.md`](docs/cloudflare.md).
 
 ## CI
 
 The repository includes a Linux compile smoke test that clones the exact pinned
-DFHack and Multi Dwarf revisions, applies the port patch and builds the
+DFHack and Multi Dwarf revisions, applies both source patches and builds the
 `dfcapture_public` plugin. It does not require or upload the purchased DF archive.
 
 ## Important limitations
