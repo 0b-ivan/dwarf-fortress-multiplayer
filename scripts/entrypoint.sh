@@ -67,7 +67,8 @@ DISPLAY="$DISPLAY" matchbox-window-manager \
   -use_desktop_mode plain \
   >/var/log/df/wm.log 2>&1 &
 
-websockify --web=/usr/share/novnc 6080 127.0.0.1:5900 \
+# Keep noVNC internal; nginx owns public :6080 so it can add the audio bar.
+websockify --web=/usr/share/novnc 6081 127.0.0.1:5900 \
   >/var/log/df/novnc.log 2>&1 &
 
 # Real DF audio: PulseAudio null sink -> ffmpeg Opus -> Icecast.
@@ -113,7 +114,7 @@ if [ "$pulse_ready" -eq 1 ]; then
   ) &
 fi
 
-# Public player gateway. DFCapture itself only listens on loopback behind nginx.
+# Public gateways. DFCapture and noVNC only listen on loopback behind nginx.
 nginx -t
 nginx
 
@@ -127,7 +128,7 @@ cd /opt/df
 echo "[start] Dwarf Fortress 53.16 + DFHack + DFCapture (Linux port)"
 echo "[start] DFCapture: http://127.0.0.1:${PUBLIC_PORT}/"
 echo "[start] Live audio: http://127.0.0.1:${PUBLIC_PORT}/audio"
-echo "[start] noVNC admin: http://127.0.0.1:6080/vnc.html?autoconnect=true&resize=remote"
+echo "[start] noVNC admin + audio: http://127.0.0.1:6080/"
 
 # Quitting DF from VNC is an application-level exit, not a reason to tear down
 # the service. Keep Xvnc, DFCapture gateway and audio alive and relaunch only DF.
