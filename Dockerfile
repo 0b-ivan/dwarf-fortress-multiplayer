@@ -62,9 +62,12 @@ RUN git clone https://github.com/SourceAirbender/multi-dwarf.git \
 
 COPY scripts/patch-multidwarf-linux.py /usr/local/bin/patch-multidwarf-linux.py
 COPY scripts/patch-multidwarf-join.py /usr/local/bin/patch-multidwarf-join.py
+COPY scripts/patch-multidwarf-ownership.py /usr/local/bin/patch-multidwarf-ownership.py
 RUN python3 /usr/local/bin/patch-multidwarf-linux.py \
       /build/dfhack/plugins/external/dfcapture_public \
     && python3 /usr/local/bin/patch-multidwarf-join.py \
+      /build/dfhack/plugins/external/dfcapture_public \
+    && python3 /usr/local/bin/patch-multidwarf-ownership.py \
       /build/dfhack/plugins/external/dfcapture_public
 
 RUN --mount=type=cache,target=/ccache \
