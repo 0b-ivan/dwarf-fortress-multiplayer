@@ -70,6 +70,9 @@ RUN python3 /usr/local/bin/patch-multidwarf-linux.py \
     && python3 /usr/local/bin/patch-multidwarf-ownership.py \
       /build/dfhack/plugins/external/dfcapture_public
 
+COPY scripts/patch-multidwarf-zoom.py /usr/local/bin/patch-multidwarf-zoom.py
+RUN python3 /usr/local/bin/patch-multidwarf-zoom.py /build/dfhack/plugins/external/dfcapture_public
+
 RUN --mount=type=cache,target=/ccache \
     cmake -S /build/dfhack -B /build/dfhack/build -G Ninja \
       -DCMAKE_BUILD_TYPE=Release \
@@ -92,6 +95,10 @@ RUN set -eux; \
     find /opt/df/hack/plugins -maxdepth 1 -type f -name 'dfcapture*' -print; \
     test -n "$(find /opt/df/hack/plugins -maxdepth 1 -type f -name 'dfcapture*.so' -print -quit)"
 
+COPY web/dfcapture-layout.css /opt/df/hack/dfcapture-web/css/dfcapture-layout.css
+COPY web/dfcapture-layout.js /opt/df/hack/dfcapture-web/js/dfcapture-layout.js
+COPY scripts/patch-dfcapture-stockpiles.py /usr/local/bin/patch-dfcapture-stockpiles.py
+RUN python3 /usr/local/bin/patch-dfcapture-stockpiles.py /opt/df/hack/lua/plugins/dfcapture.lua
 COPY web/dfcapture-live-audio.css /opt/df/hack/dfcapture-web/css/dfcapture-live-audio.css
 COPY web/dfcapture-live-audio.js /opt/df/hack/dfcapture-web/js/dfcapture-live-audio.js
 COPY scripts/patch-dfcapture-live-audio.py /usr/local/bin/patch-dfcapture-live-audio.py
@@ -118,7 +125,8 @@ COPY config/nginx.conf /etc/nginx/nginx.conf
 COPY web/join-index.html /opt/join/index.html
 COPY web/novnc-index.html /opt/novnc-custom/index.html
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh \
+COPY scripts/backup-save.sh /usr/local/bin/backup-save.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/backup-save.sh \
     && mkdir -p "/root/.local/share/Bay 12 Games/Dwarf Fortress/save" /backups /var/log/df
 
 ENV DISPLAY=:99 \

@@ -63,7 +63,7 @@ The image build:
 1. extracts your Linux Premium 53.16 archive
 2. builds DFHack `53.16-r1.1`
 3. checks out Multi Dwarf at a pinned commit
-4. applies the native-Linux and multiplayer-lobby patches
+4. applies the Linux, lobby, ownership, camera-zoom and stockpile patches
 5. compiles the Linux `.plug.so`
 6. assembles the runtime image
 
@@ -116,6 +116,49 @@ to the lobby.
 All players share **one actual fortress**. DFCapture supplies separate browser
 camera/control state.
 
+## Browser controls and recent fixes
+
+- **Map zoom:** use the Map − / + / reset buttons or Settings → Map zoom.
+  Linux capture now uses a temporary viewport-buffer guard to render the requesting
+  player's zoom and restore the host renderer afterward. This is experimental;
+  isolation across simultaneous players and the noVNC admin still needs runtime
+  validation. It is not browser-image scaling.
+- **UI scale:** Settings → UI scale resizes browser controls independently of the
+  map. Small windows automatically limit the effective scale to keep controls reachable.
+- Toolbars reserve space above the audio bar. Chat is part of the left toolbar;
+  designation submenus sit above the main toolbar. Unit headers retain their height,
+  and settings/panels scroll when they exceed the available space.
+- **Pastures:** tame animals belonging to the fortress civilization are no longer
+  excluded from the assignable-animal list by the civilization filter.
+- **Stockpiles:** disabling a category now clears its category flag as well as
+  supporting the existing enable/customize workflow.
+- Audio reconnects after stream errors. Browser autoplay restrictions may still
+  require a click on **Enable audio**.
+
+After a web UI update, hard-refresh the player page (macOS: **⌘⇧R**).
+The image also reinitializes the save barrier on plugin load so a stale shutdown
+state does not permanently block browser access. Active saving/loading still blocks
+world operations until cleanup completes.
+
+## Home network: http://dwarf.local
+
+The optional LAN gateway exposes the noVNC admin display, WebSockets and live audio on
+port 80. `client.dwarf.local` opens the multiplayer lobby and player UI with audio.
+On a macOS Docker host, a Bonjour helper announces both names without
+router DNS configuration or renaming the Mac:
+
+```bash
+# With the game already running from the current image:
+make lan-up
+make lan-bonjour
+```
+
+Open **http://dwarf.local/** on devices in the same network. Audio may require
+one click on **Enable audio**. This grants devices on the LAN shared admin control.
+The local admin URL remains localhost:6080; players use **http://client.dwarf.local/**
+or the configured Cloudflare hostname.
+See [`docs/lan.md`](docs/lan.md) for GHCR, network interfaces, startup and removal.
+
 ## Persistence
 
 ```text
@@ -127,12 +170,21 @@ camera/control state.
 The container also points `/opt/df/save` at the same location so DFCapture's
 per-fort metadata follows the persistent save.
 
+Backup snapshots are created automatically every 15 minutes by default in
+`./data/backups`. They are written as complete `.tar.gz` snapshots after the
+save directory has been stable for a short period. The default retention is 20
+snapshots. These copy existing on-disk saves; they do not trigger an in-game save
+and do not include progress since the last save. The stability check is best-effort,
+not a transactional snapshot of a running save. Configure `BACKUP_INTERVAL_SECONDS`, `BACKUP_RETENTION`, or set
+`BACKUP_ENABLED=0` in the environment to change this behavior.
+
 ## Ports
 
 | Port | Purpose | Exposure |
 |---|---|---|
 | `8765` | Lobby + DFCapture player UI/API | localhost by default; Cloudflare tunnel target |
 | `6080` | noVNC admin/bootstrap | localhost only |
+| `80` | Optional LAN gateway: admin + multiplayer + audio, selected by hostname | host IPv4 interfaces with `docker-compose.lan.yml` |
 
 ## Cloudflare multiplayer access
 
@@ -167,14 +219,16 @@ to the Cloudflare Tunnel. See [`docs/cloudflare.md`](docs/cloudflare.md).
 ## CI
 
 The repository includes a Linux compile smoke test that clones the exact pinned
-DFHack and Multi Dwarf revisions, applies both source patches and builds the
+DFHack and Multi Dwarf revisions, applies the Linux, join, ownership and zoom
+source patches and builds the
 `dfcapture_public` plugin. It does not require or upload the purchased DF archive.
 
 ## Important limitations
 
 The first Linux MVP deliberately does not port the Windows-only private renderer
-RVA hooks. Expect differences from upstream Windows behavior around per-player
-zoom, some portraits, native barter, and capture performance.
+RVA hooks. Expect differences from upstream Windows behavior around some portraits,
+native barter, and capture performance. The Linux per-player zoom implementation is
+experimental; successful compilation does not establish runtime isolation or visual correctness.
 
 This code does **not** fake Linux compatibility by running Windows DF through
 Wine.

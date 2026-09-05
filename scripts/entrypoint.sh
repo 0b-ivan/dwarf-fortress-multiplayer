@@ -11,7 +11,19 @@ export SDL_AUDIODRIVER="${SDL_AUDIODRIVER:-pulseaudio}"
 PUBLIC_PORT="${DFCAPTURE_PUBLIC_PORT:-8765}"
 BACKEND_PORT="${DFCAPTURE_BACKEND_PORT:-8766}"
 SAVE_DIR="${HOME}/.local/share/Bay 12 Games/Dwarf Fortress/save"
-mkdir -p "$SAVE_DIR" /backups /var/log/df
+BACKUP_DIR="${BACKUP_DIR:-/backups}"
+mkdir -p "$SAVE_DIR" "$BACKUP_DIR" /var/log/df
+
+export SAVE_DIR BACKUP_DIR
+
+if [ "${BACKUP_ENABLED:-1}" = "1" ]; then
+  BACKUP_INTERVAL_SECONDS="${BACKUP_INTERVAL_SECONDS:-900}" \
+    BACKUP_RETENTION="${BACKUP_RETENTION:-20}" \
+    /usr/local/bin/backup-save.sh >/var/log/df/backup.log 2>&1 &
+  backup_pid=$!
+else
+  backup_pid=""
+fi
 
 if [ -e /opt/df/save ] && [ ! -L /opt/df/save ]; then
   mv /opt/df/save "/opt/df/save.image.$(date +%s)"
@@ -136,6 +148,9 @@ shutting_down=0
 df_pid=""
 shutdown() {
   shutting_down=1
+  if [ -n "${backup_pid:-}" ]; then
+    kill "$backup_pid" 2>/dev/null || true
+  fi
   if [ -n "$df_pid" ]; then
     kill -TERM "$df_pid" 2>/dev/null || true
   fi

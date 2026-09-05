@@ -1,0 +1,153 @@
+/* Shared, scale-aware layout for the Linux browser client. */
+#hud {
+  bottom: var(--dfc-audio-gutter, calc(42px / var(--ui-scale, 1)));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 4px;
+  container-type: inline-size;
+}
+#topbar {
+  position: relative;
+  inset: auto;
+  grid-column: 1;
+  grid-row: 1;
+  margin-left: 38px;
+  min-width: 0;
+  align-self: start;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+}
+#topbar > * { min-width: 0; }
+#topbar .fort-lines { overflow-wrap: anywhere; }
+#stockSummary { flex-wrap: wrap; }
+#headerActions {
+  align-self: start;
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  pointer-events: auto;
+}
+#pauseRow, #extraTools {
+  position: static;
+  inset: auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 100%;
+}
+#rightHud { position: static; grid-column: 3; grid-row: 1; width: 180px; }
+#rightHud #minimap { min-width: 0; flex: 1; }
+#mapZoomControls { display: flex; gap: 3px; align-items: center; }
+#mapZoomControls button { min-height: 26px; min-width: 30px; cursor: pointer; }
+#bottomBar {
+  position: static;
+  inset: auto;
+  grid-column: 1 / -1;
+  grid-row: 3;
+  height: auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 4px;
+}
+#bottomBar .tool-group {
+  position: static;
+  inset: auto;
+  transform: none;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+#bottomBar .tool-subgroup { flex-wrap: wrap; }
+#chatToggle {
+  position: static;
+  inset: auto;
+  height: 32px;
+  min-width: 42px;
+  flex-shrink: 0;
+}
+#chatPanel, #stockPalette, #zonePalette, #spEditorModal {
+  zoom: var(--ui-scale, 1);
+}
+#chatPanel, #stockPalette, #zonePalette {
+  max-width: calc(100vw / var(--ui-scale, 1) - 16px);
+  max-height: calc(100vh / var(--ui-scale, 1) - var(--dfc-bottom, 50px) - 16px);
+  box-sizing: border-box;
+  overflow: auto;
+  bottom: calc(var(--dfc-bottom, 50px) + 8px);
+}
+#selection, #clientPanel {
+  max-width: calc(100vw / var(--ui-scale, 1) - 24px) !important;
+  max-height: calc(100vh / var(--ui-scale, 1) - var(--dfc-top, 80px) - var(--dfc-bottom, 50px) - 16px) !important;
+  top: calc(var(--dfc-top, 80px) + 8px) !important;
+  bottom: auto !important;
+  overflow: auto;
+}
+#clientPanel.info-panel, #selection.unit-sheet-panel, #selection.workshop-panel {
+  height: calc(100vh / var(--ui-scale, 1) - var(--dfc-top, 80px) - var(--dfc-bottom, 50px) - 16px);
+}
+#selection.building-panel.zone-panel {
+  left: 12px;
+  width: min(620px, calc(100vw / var(--ui-scale, 1) - 24px));
+}
+#spEditorModal { box-sizing: border-box; }
+#settingsMenu {
+  top: calc(var(--dfc-top, 80px) + 4px);
+  right: 4px;
+  max-width: calc(100vw / var(--ui-scale, 1) - 12px);
+  max-height: calc(100vh / var(--ui-scale, 1) - var(--dfc-top, 80px) - var(--dfc-bottom, 50px) - 12px);
+  overflow: auto;
+  box-sizing: border-box;
+}
+#sinceYouLeftDigest, #brPaintBanner, #haStopBanner, #sqAimBanner {
+  zoom: var(--ui-scale, 1);
+  max-width: calc(100vw / var(--ui-scale, 1) - 16px);
+  max-height: calc(100vh / var(--ui-scale, 1) - 120px);
+  bottom: calc(var(--dfc-bottom, 50px) + 8px);
+  box-sizing: border-box;
+  overflow: auto;
+}
+@container (max-width: 1000px) {
+  #topbar { grid-column: 1 / 3; }
+  #headerActions { grid-column: 1 / -1; grid-row: 2; flex-direction: row; flex-wrap: wrap; justify-content: flex-end; }
+  #bottomBar { grid-row: 4; }
+  #rightHud { width: 140px; }
+}
+@container (max-width: 620px) {
+  #topbar { margin-left: 34px; padding: 4px; }
+  #rightHud { width: 105px; }
+  #topbar .hide-small { display: none; }
+  #topbar .moods { flex-wrap: wrap; }
+}
+
+#digSubmenu, #plantSubmenu, #smoothSubmenu, #trafficSubmenu, #itemDesigSubmenu {
+  bottom: calc(var(--dfc-toolbar-height, 44px) + 4px) !important;
+}
+
+/* Keep pop-up tools adjacent to the centered main toolbar. */
+@container (min-width: 1100px) {
+  #bottomBar { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+  #leftTools { justify-self: start; }
+  #centerTools { justify-self: center; }
+  #rightTools { justify-self: end; }
+}
+/* Headers must keep their content height instead of shrinking into the tabs. */
+#selection .unit-sheet { height: auto; min-height: 100%; }
+.unit-sheet > * { flex-shrink: 0; }
+.unit-sheet-header { grid-template-columns: 104px minmax(0, 1fr) auto; padding-top: 24px; padding-bottom: 10px; }
+.unit-sheet-header > * { min-width: 0; }
+.unit-header-actions { flex-wrap: wrap; align-content: start; max-width: 124px; }
+.unit-name-line, .unit-meta-line { overflow-wrap: anywhere; }
+.unit-sheet-footer { padding-top: 8px; overflow-wrap: anywhere; }
+/* Visible scrolling makes every settings row reachable at any UI scale. */
+#settingsMenu { overflow-y: scroll; overscroll-behavior: contain; scrollbar-gutter: stable; scrollbar-width: auto; scrollbar-color: #d89b27 #211a0c; padding-bottom: 16px; }
+#settingsMenu::-webkit-scrollbar { width: 12px; }
+#settingsMenu::-webkit-scrollbar-track { background: #211a0c; }
+#settingsMenu::-webkit-scrollbar-thumb { background: #a97e22; border: 2px solid #211a0c; }
+#settingsMenu h3 { position: sticky; top: -10px; z-index: 1; background: #151515; padding-block: 8px; margin-top: -8px; }
+#settingsMenu .set-label { min-width: 0; overflow-wrap: anywhere; }
+#settingsMenu .zoom-controls { flex-shrink: 0; }

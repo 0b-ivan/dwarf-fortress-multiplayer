@@ -1,0 +1,13 @@
+# Combine with docker-compose.yml or docker-compose.ghcr.yml.
+services:
+  lan-gateway:
+    image: nginx:stable-alpine
+    restart: unless-stopped
+    ports:
+      - "${LAN_BIND_IP:-0.0.0.0}:80:80"
+    volumes:
+      - ./config/nginx-lan.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./web/novnc-index.html:/usr/share/nginx/html/index.html:ro
+    depends_on:
+      dwarf-fortress:
+        condition: service_healthy

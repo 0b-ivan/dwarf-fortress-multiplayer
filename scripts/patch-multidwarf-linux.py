@@ -455,4 +455,19 @@ if '#ifdef _WIN32\n' + assert_block not in trade:
     )
 write('src/native_trade.cpp', trade)
 
+# Fortress livestock shares the fortress civ. Rejecting every own-civ unit
+# therefore hides tame yaks (and other domestic animals) from pasture lists.
+# Keep the own-race guard and all existing life/merchant/wild/position checks.
+zones = read('src/building_zone.cpp')
+zones = require_replace(
+    zones,
+    '    if (Units::isOwnRace(unit) || Units::isOwnCiv(unit))\n'
+    '        return false;\n',
+    '    // Domestic animals can belong to our civ; that does not exclude them.\n'
+    '    if (Units::isOwnRace(unit))\n'
+    '        return false;\n',
+    'pasture candidates: allow own-civ livestock',
+)
+write('src/building_zone.cpp', zones)
+
 print('Linux patch applied successfully')

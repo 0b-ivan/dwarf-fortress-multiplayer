@@ -146,4 +146,7 @@ for expected in (
     if expected not in haystack:
         raise SystemExit(f"stair patch verification failed: {expected}")
 
+text = text.replace('</head>', '<link rel="stylesheet" href="/css/dfcapture-layout.css?v=3">\n</head>', 1)
+text = text.replace('<script>startDfcapture();</script>', '<script src="/js/dfcapture-layout.js?v=3"></script>\n<script>startDfcapture();</script>', 1)
+
 path.write_text(text, encoding="utf-8")

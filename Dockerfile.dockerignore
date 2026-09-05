@@ -1,0 +1,8 @@
+.git
+.gitignore
+README.md
+docs/
+data/
+assets/private/*
+!assets/private/dwarf_fortress_53_16_linux.tar.bz2
+.DS_Store

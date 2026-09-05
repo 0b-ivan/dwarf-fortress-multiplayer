@@ -4,6 +4,7 @@
 
   const STORAGE_VOLUME = "dfcapture.liveAudio.volume";
   const STORAGE_MUTED = "dfcapture.liveAudio.muted";
+  const STREAM_URL = "/audio";
 
   function boot() {
     const audio = document.getElementById("liveDfAudio");
@@ -21,6 +22,8 @@
       status.textContent = value;
     }
 
+    let requestedPlayback = false;
+
     function remember() {
       try {
         localStorage.setItem(STORAGE_VOLUME, String(audio.volume));
@@ -29,6 +32,7 @@
     }
 
     async function start() {
+      requestedPlayback = true;
       setStatus("Connecting…");
       try {
         await audio.play();
@@ -39,17 +43,34 @@
       }
     }
 
+    let reconnectTimer = null;
+    function reconnect() {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(() => {
+        audio.src = `${STREAM_URL}?t=${Date.now()}`;
+        audio.load();
+        if (requestedPlayback) start();
+      }, 1200);
+    }
+
     enable.addEventListener("click", start);
     audio.addEventListener("volumechange", remember);
     audio.addEventListener("playing", () => {
       enable.hidden = true;
       setStatus("Live DF audio");
     });
+    audio.addEventListener("pause", () => {
+      if (!audio.error) requestedPlayback = false;
+    });
     audio.addEventListener("waiting", () => setStatus("Buffering…"));
-    audio.addEventListener("stalled", () => setStatus("Reconnecting…"));
+    audio.addEventListener("stalled", () => {
+      setStatus("Reconnecting…");
+      reconnect();
+    });
+    audio.addEventListener("abort", reconnect);
     audio.addEventListener("error", () => {
-      enable.hidden = false;
-      setStatus("Audio unavailable");
+      setStatus("Reconnecting…");
+      reconnect();
     });
 
     start();

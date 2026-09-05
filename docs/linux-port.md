@@ -43,13 +43,32 @@ The build-time patcher:
   `unused-function`/`unused-label` warnings for the external DFCapture target on Linux
 - rewrites an upstream one-line `if` pattern that GCC flags as misleading indentation
 
+## Additional patches
+
+`patch-multidwarf-zoom.py` enables the typed `ViewportZoomGuard` on Linux.
+It temporarily substitutes viewport buffers and dimensions, applies the player's
+zoom, captures the frame and restores the host state. It calls the typed renderer
+interface rather than Windows RVA hooks. The same patch re-arms the save barrier
+on plugin initialization and waits for a loaded world and save cleanup before
+allowing browser world operations.
+
+The Linux patch permits own-civilization tame animals in pasture candidate lists.
+`patch-dfcapture-stockpiles.py` explicitly clears category flags when disabling
+stockpile presets. Browser layout overrides live in `web/dfcapture-layout.css`
+and `web/dfcapture-layout.js`; both image variants install them alongside live audio.
+
+Local source-image builds completed successfully. The stockpile toggle was checked
+against all 17 category flags with the original settings restored afterward. Further
+live zoom/isolation and final responsive-layout tests were skipped at the operator's
+request. Treat those as unverified rather than completed acceptance checks.
+
 ## Known limitations
 
 The Windows build has extra fast/private paths that are intentionally not
 ported yet. The Linux MVP may therefore have:
 
 - higher capture cost
-- no independent per-player zoom implementation yet
+- experimental per-player zoom with runtime isolation validation still outstanding
 - no native barter commit bridge
 - reduced portrait-generation fallbacks
 - possible panel incompatibilities where upstream depends on Windows internals

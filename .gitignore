@@ -13,3 +13,4 @@ data/backups/*
 # Local config
 .env
 .DS_Store
+data/lan/

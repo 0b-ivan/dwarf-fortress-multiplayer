@@ -28,6 +28,9 @@ services:
       DFCAPTURE_PUBLIC_PORT: "8765"
       DFCAPTURE_BACKEND_PORT: "8766"
       DF_AUTOPAUSE: "${DF_AUTOPAUSE:-0}"
+      BACKUP_ENABLED: "${BACKUP_ENABLED:-1}"
+      BACKUP_INTERVAL_SECONDS: "${BACKUP_INTERVAL_SECONDS:-900}"
+      BACKUP_RETENTION: "${BACKUP_RETENTION:-20}"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8765/health >/dev/null || exit 1"]
       interval: 15s

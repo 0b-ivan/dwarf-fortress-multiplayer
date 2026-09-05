@@ -33,13 +33,15 @@ jobs:
           git -C /tmp/dfhack/plugins/external/dfcapture_public \
             checkout 11ea5b1df1efe599bdb4746f21773f051345a6fe
 
-      - name: Apply Linux, join and ownership patches
+      - name: Apply Linux, join, ownership and zoom patches
         run: |
           python3 scripts/patch-multidwarf-linux.py \
             /tmp/dfhack/plugins/external/dfcapture_public
           python3 scripts/patch-multidwarf-join.py \
             /tmp/dfhack/plugins/external/dfcapture_public
           python3 scripts/patch-multidwarf-ownership.py \
+            /tmp/dfhack/plugins/external/dfcapture_public
+          python3 scripts/patch-multidwarf-zoom.py \
             /tmp/dfhack/plugins/external/dfcapture_public
 
       - name: Configure DFHack
